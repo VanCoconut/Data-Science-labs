@@ -1,0 +1,136 @@
+ESAME 2023-01-23.pdf
+
+SELECT IntermediarioFinanxiario,4-mesi,Stato,SUM(#Acquisti), SUM(Valore),
+	 RANK() OVER (ORDER BY SUM(Valore) ASCENDING),
+       RAN() OVER (PARTITON 4-mesi, Stato, BY ORDER BY SUM(#Acquisti) , DESCENDING)
+
+FROM INTERMEDIARIO-FINANZIOARIO I, ACQUISTO A,TEMPO T
+WHERE I.IDIntermediarioFinanziario=A.IDIntermediarioFinanziario AND T.idTempo=A.IDTempo
+GROUP BY IntermediarioFinanxiario,4-mesi,Stato
+
+SELECT IntermediarioFinanziario, 4-mesi,Anno, SUM(Valore), SUM(SUM(Valore)) OVER (PARTITION BY Anno,IntermediarioFinanziario ORDER BY 4-MESI, ROWS UNBOUNDED PRECEDING),
+	SUM (SUM(Valore)) OVER (PARTITION BY 4-MESI)
+
+
+
+FROM INTERMEDIARIO-FINANZIOARIO I, ACQUISTO A,TEMPO T, PRODOTTO-FINANZIARIO P
+
+WHERE P.CategoriaP="ContrattiDErivati" AND I.IDIntermediarioFinanziario=A.IntermediarioFinanziario AND T.IDTempo=A:IDTempo AND A.IDProdottoFinanziario=P.IDProdottoFinanziario
+
+GROUP BY IntermediarioFinanziario, 4-mesi,Anno
+
+
+SELECT ProdottoFinanziario,Professione,3-MESI,
+	SUM(#Acquisti), SUM(ValoreAcquisti)/SUM(#Acqusiti),
+	SUM(ValoreAcqusiti)/COUNT(DISTINCT(MESE),
+	100*SUM(ValoreAcquisti)/SUM(SUM(ValoreAcquisti)) OVER (PARTITION BY Preofessione,3-MESI,CategoriaP)
+
+FROM JUNK-CARATTERISTICEH-CLIENTE J, TEMPO T, ACQUISTO A, PRODOTTO-FINANZIARIO P
+
+WHERE A.IDTempo=T.IDTempo, J.IDJCC=A.IDJCC, A.IDProdottoFinanaziario=P.IDProdottoFinanziario
+
+GROUP BY ProdottoFinanziario,Professione,3-MESI,CAtegoriaP
+
+
+SELECT Nazionalità,PropensioneAlRischio, SUM(#Acquisti) AS TOT_ACQ,SUM(ValoreAcquisti) AS TOT_VAL,
+	Anno,Citta,Regione,6-Mesi,2-Mesi
+
+FROM TEMPO T, INTERMEDIARIO-FINANAZIARIO I,JUNK-CARATTERISTICHE-CLIENTE, ACQUISTO A
+
+WHERE T.ID_Tempo=A:IDTempo AND I.IDIntermediarioFinanziario=A.IDIntermediarioFiannaziario AND J.IDJCC=A.IDJCC
+
+GROUP BY Nazionalità,PropensioneAlRischio,2-Mesi,Regione,6-Mesi,Anno,Citta,
+
+
+
+
+
+CREATE OR REPLACE TRIGGER T1
+AFTER INSERT ON ACQUISTI
+FOR EACH ROW
+
+
+
+DECLARE
+
+VAR_2M,VAR_6M,VAR_ANNO,VAR_NAZIONE,VAR_RISCHIO,VAR_CITTA,VAR_REGIONE VARCHAR(20),
+N NUMBER
+
+BEGIN
+
+
+SELECT 2Mesi,6-Mesi,Anno
+INTO VAR_2M,VAR_6M,VAR_ANNO
+FROM TEMPO T
+WHERE T.IDTempo=:NEW.IDTempo
+
+SELECT Nazionalità,PropensioneAlRischio
+INTO VAR_NAZIONE,VAR_RISCHIO
+FROM JUNK-CARATTERISTICHE-CLIENTE J
+WHERE J.IDJCC=:NEW.IDJCC
+
+SELECT Citta,REgione
+INTO VAR_CITTA,VAR_REGIONE
+FROM INTERMEDIARIO-FINANZIARIO I
+WHERE I.IDIntermediarioFinanziario=:NEW.IDIntermediarioFinanziario
+
+SELECT COUNT(*) INTO N
+FROM VIEW
+WHERE 2-Mesi=VAR_2M AND NAzionalita=VAR_NAZIONE AND VAR_RISCHIO=PRopensioneAlRisschio AND VAR_CITTA=Citta
+
+IF(N>0)
+	UPDATE VIEW
+	SET TOT_ACQ=TOT_ACQ+:NEW.#Acquisti, TOT_VAL=TOT_VAL+:NEW.ValoreAcquisti
+	WHERE 2-Mesi=VAR_2M AND NAzionalita=VAR_NAZIONE AND VAR_RISCHIO=PRopensioneAlRisschio AND VAR_CITTA=Citta
+
+ELSE
+	INSERT INTO VIEW (Nazionalità,PropensioneAlRischio,Citta,REgione,2-MEsi,6-Mesi,Anno, TOT_VAL,TOT_ACQ)
+	VALUES (VAR_NAZIONE,VAR_RISCHIO,VAR_CITTA,VAR_REGIONE,VAR_2M,VAR_6M,VAR_ANNO, :NEW.ValoreAcquisti,:NEW.#Acquisti)
+
+END IF
+
+END
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

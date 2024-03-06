@@ -1,0 +1,128 @@
+ESAME 2023-06-16.pdf
+
+SELECT Genere, 2-Mesi, TipoCertificazione, 
+	SUM(IncassoTotale), SUM(NumeroSuperi)/SUM(NumeroIscritti),
+	100*SUM(NumeroSuperi)/SUM(SUM(NumeroSuperi)) OVER (PARTITION BY 6-Mesi, TipoCertificazione,Genere),
+	SUM(SUM(IncassoTotale)) OVER (PARTITION BY 6-Mesi,TipoCertitificazione,Genere
+					ORDER BY 2-Mesi, ROWS UNBOUNDED PRECEDING)					
+ 
+FROM CARATTERISTICHE-ISCRITTI C, EROGAZIONE-CORSI E, CARATTERISTICHE-CORSO-CERTIFICAZIONE CA, TEMPO T
+WHERE C.IDCarattOscritti=E.IDCarattIscritti AND E.IDCarattCorsoCert=CA.IDCarattCorsoCert AND T.IDTempo=E.IDTempo
+GROUP BY Genere, 2-Mesi, 6-Mesi,TipoCertificazione
+
+
+SELECT 6-Mesi,Tematica,ModalitaErogazione
+	SUM(NumeroOreErogate),SUM(NumeroSuperi)/COUNT(DISTINCT MEse),
+	SUM(NumeroIscritti)/SUM(SUM(NumeroIscritti)) OVER (PARTITION BY Anno,ModalitaCertificazione,Tematica),
+	RANK() OVER (PARTITION BY Anno, Tematica,ModalitaErogazione ORDER BY SUM(NumOreErogate) DESC) 
+
+
+FROM CARATTERISTICHE-CORSO-CERTIFICAZIONE CA, EROGAZIONE-CORSI E, TEMPO T,SEDE-CERTIFICAZIONE S
+WHERE StatoSede=Italia AND CA.IDCarattCorsoCert=E.IDCarattCorsoCert AND E.IDTempo=T:IDTempo NAD E.IDSedeCertificazione=S.IDSedeCertificazione
+GROUP BY 6-Mesi,Anno,Tematica,ModalitaErogazione
+
+SELECT Professione,StatoSede,3-Mesi,
+	SUM(NumeroIscritti),SUM(NumeroSuperi),
+	SUM(IncassoTotale)/SUM(NUmeroIsccritti),
+	SUM(IncassoTotale)/COUNT(DISTINCT MEse),
+	SUM(SUM(IncassoTotale)) OVER (PARTITION BY Professione,Stato,Anno),
+	RANK () OVER (PARTITION BY anno, ORDER BY SUM(NumeroSuperi) DESC)
+
+FROM SEDE-CARATTERISTICHE S, EROGAZIONE CORSI E, TEMPO T, CARATTERISTICHE-CORSO-CERTIFICAZIONE CC, CARATTERISTICHE-ISCRITTI CI
+
+WHERE ModalitaErogazione="Online" AND E.IDTempo=T.IDTempo AND E.IDSedeCertificazione=S.IDSedeCertificazione AND E.IDCarattCorsoCert =CC.CarattCorsoCert AND E.IDCarattIscritti=CI.IDCarattIscritti
+
+GROUP BY Professione,StatoSede,3-Mesi,Anno
+
+VISTA
+
+SELECT Genere,FasciaEta,RegioneSede, StatoSede, Professione, Mese, 
+	SUM(NumeroIscritti) AS TOT_ISCR, SUM(NumeroSuperi) AS TOT_S,SUM(IncassoTotale) TOT_IN, SUM(NumeroOreErogate) TOT_ORE
+
+FROM EROGAZIONE-CORSI E, SEDE-CERTIFICAZIONE S, TEMPO T, CARATTERISTICHE-ISCRITTI C
+
+WHERE E.IDTempo=T.IDTempo AND S.IDSedeCertificazione=E.IDSedeCertificazione AND E.IDCarattIscritti=C.IDCarattIscritti
+
+GROUP BY Genere,FasciaEta,RegioneSede, StatoSede, Professione, Mese, Anno
+
+MINIMO = Genere,FasciaEta,RegioneSede, Professione, Mese
+
+CREATE OR REPLACE TRIGGER T1
+AFTER INSERT ON EROGAZIONE-CORSI
+FOR EACH ROW
+
+DECLARE
+
+VAR_MESE,VAR_REGIONE, VAR_STATO, VAR_ETA,VAR_P,VAR_G VARCHAR(20);
+N INTEGER;
+
+BEGIN
+
+SELECT Mese INTO VAR_MESE
+FROM TEMPO
+WHERE ID.Tempo=:NEW.IDTempo;
+
+SELECT RegioneSede, StatoSede INTO VAR_REGIONE,VAR_STATO
+FROM SEDE-CERTIFICAZIONE 
+WHERE IDSedeCertificazione=:NEW.IDSedeCertificazione;
+
+SELECT FasciaEta,Professione, Genere
+INTO VAR_ETA,VAR_P,VAR_G
+FROM CARATTERISTICHE-ISCRITTI
+WHERE IDCaattIscritti=:NEW.IDCarattIscritti;
+
+SELECT COUNT(*) INTO N
+FROM VIEW
+WHERE Mese=VAR_MESE AND REgioneSede=VAR_REGION ABD VAR_ETA=FasciaEta AND VAR_P=Professione AND VAR_G=Genere
+
+IF(N>0)
+	UPDATE VIEW
+	SET TOT_ORE+=:NEW.NumeroOre, TOT_IN+=:NEW.NumeroOre, TOT_S+=:NEW.NumeroSuperi, TOT_ISCR+=:NEW.Numeroiscritti, 
+	WHERE Mese=VAR_MESE AND REgioneSede=VAR_REGION ABD VAR_ETA=FasciaEta AND VAR_P=Professione AND VAR_G=Genere
+ELSE
+	INSERT INTO VIEW ( Mese,RegioneSede,StatoSede,FasciaEta,Professione,Genere,TOT...) 
+	VALUES (VAR_MESE,VAR_REGIONE,VAR_STATO,VAR_ETA,VAR_P,VAR_G, :NEW.IncassoTotale,:NEW.NumeroOreErogate,:NEW.NumeroSuperi,..)
+
+END IF 
+
+END
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
